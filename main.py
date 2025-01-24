@@ -4,6 +4,7 @@ from telebot import types
 # токен бота
 bot = telebot.TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
 
+#/start
 @bot.message_handler(commands=['start']) #декоратор комманды
 def main(message):
     welcome_text = (
@@ -22,6 +23,7 @@ def main(message):
     )
     bot.send_message(message.chat.id, welcome_text, parse_mode='html')
 
+# /help
 @bot.message_handler(commands=['help'])
 def main(message):
     help_text = (
@@ -36,7 +38,14 @@ def main(message):
     )
     bot.send_message(message.chat.id, help_text, parse_mode='html')
 
-
+# /upload_material
+@bot.message_handler(commands=['upload_material'])
+def main(message):
+    upload_text = (
+        'Для загрузки материала отправьте его файл следующим сообщением\n\n'
+        '<p><ins><small>Учтите, что формат файла должен поддерживаться ботом (PDF, DOCX, PPT или изображение)</small></ins></p>'
+    )
+    bot.send_message(message.chat.id, upload_text, parse_mode='html')   
 
 
 
