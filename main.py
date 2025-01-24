@@ -43,7 +43,7 @@ def main(message):
 def main(message):
     upload_text = (
         'Для загрузки материала отправьте его файл следующим сообщением\n\n'
-        '<p><ins><small>Учтите, что формат файла должен поддерживаться ботом (PDF, DOCX, PPT или изображение)</small></ins></p>'
+        '<ins>Учтите, что формат файла должен поддерживаться ботом (PDF, DOCX, PPT или изображение)</ins>'
     )
     bot.send_message(message.chat.id, upload_text, parse_mode='html')   
 
