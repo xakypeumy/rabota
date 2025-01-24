@@ -20,4 +20,5 @@
 - Обогащение учебного процесса благодаря обмену знаниями и опытом.
 
 Используемые библиотеки:
+
 [pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/)
