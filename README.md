@@ -19,7 +19,12 @@
 - Создание сообщества, где студенты могут поддерживать друг друга.
 - Обогащение учебного процесса благодаря обмену знаниями и опытом.
 
+### Для быстрой установки всех необходимых библиотек запустите файл <ins>setup.py</ins>. 
+
+Установить библиотеки вручную можно по спику ниже.
+
 Используемые библиотеки:
 
 [pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/)
+
 [Django](https://docs.djangoproject.com/en/5.1/topics/install/#installing-distribution-package)
