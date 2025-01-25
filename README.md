@@ -22,12 +22,12 @@
 ### Структура приложения
 
 myproject/  
-    main.py  
-    setup.py  
-    bin/  
-        pip-req.txt  
-    uploads/  
-        search.txt  
+&emsp;main.py  
+&emsp;setup.py  
+&emsp;bin/  
+&emsp;&emsp;pip-req.txt  
+&emsp;uploads/  
+&emsp;&emsp;search.txt  
   
 ### Для быстрой установки всех необходимых библиотек запустите файл <ins>setup.py</ins>.  
   
