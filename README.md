@@ -22,4 +22,5 @@
 Используемые библиотеки:
 
 [pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/)
+
 [Django](https://docs.djangoproject.com/en/5.1/topics/install/#installing-distribution-package)
