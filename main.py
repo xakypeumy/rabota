@@ -13,7 +13,7 @@ SETTINGS_FILE = os.path.join(UPLOAD_FOLDER, "search.txt")
 upload_data = {}
 
 # Токен бота
-bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
+bot = TeleBot('')
 
 
 # /start
