@@ -13,7 +13,7 @@ SETTINGS_FILE = os.path.join(UPLOAD_FOLDER, "search.txt")
 upload_data = {}
 
 # Токен бота
-bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
+bot = TeleBot('')
 
 
 # /start
@@ -21,13 +21,15 @@ bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
 def main(message):
     markup = types.InlineKeyboardMarkup()
     # Первый ряд
-    btn1 = types.InlineKeyboardButton('Помощь', callback_data='help_btn')
-    markup.row(btn1)
+    help = types.InlineKeyboardButton('Помощь', callback_data='help_btn')
+    markup.row(help)
     # Второй ряд
     upload_button = types.InlineKeyboardButton("Загрузить материал", callback_data="upload_material")
-    btn3 = types.InlineKeyboardButton('Найти материал', callback_data='search_btn')
-    markup.row(upload_button, btn3)
-    
+    search_button = types.InlineKeyboardButton('Найти материал', callback_data='search_btn')
+    markup.row(upload_button, search_button)
+    # Третий ряд
+    discussion = types.InlineKeyboardButton("Присоединиться к обсуждению", callback_data="join_discussion")
+    markup.row(discussion)
     welcome_text = (
         f"Привет! {message.from_user.first_name}\n\n"
         "Я бот для обмена учебными материалами, который поможет тебе получить доступ к знаниям и делиться своими! 📚\n\n"
@@ -36,7 +38,7 @@ def main(message):
         "- 📤 <b>Загружать свои материалы</b>: конспекты, презентации, задачи, учебники и многое другое.\n"
         "- 💬 <b>Общаться в группах и каналах</b>: задавай вопросы, обсуждай темы и помогай другим.\n"
         "- 📂 <b>Сохранять порядок</b>: я организую материалы по категориям и тегам, чтобы их было легко найти.\n\n"
-        "Если у Тебя есть вопросы, напиши /help, и я всё объясню. 😊\n\n"
+        "Если у Тебя есть вопросы, напиши /help, и я всё объясню.\n\n"
     )
     
     bot.send_message(message.chat.id, welcome_text, parse_mode='html', reply_markup=markup)
@@ -46,6 +48,60 @@ def main(message):
 @bot.message_handler(commands=['upload_material'])
 def start_upload(message):
     initiate_upload(message.chat.id)
+
+
+# функция обсуждения
+def join_discussion(chat_id):
+    link = 'https://t.me/+0flZl9J57fs4MGMy'
+    text =(
+        'У нас есть свой собственный чат, где Вы можете обсудить нажный вам материал и запросить у знакомыйх новый.\n\n'
+        'Для того чтобы присоединиться к обсуждению перейдите по ссылке ниже:\n'
+        f'<a href="{link}"> Присоединиться к обсуждению</a>'
+    )
+    bot.send_message(chat_id, text, parse_mode='html')
+
+
+# Обработчик нажатия кнопки "Присоединиться к обсуждению"
+@bot.callback_query_handler(func=lambda call: call.data == "join_discussion")
+def handle_upload_button(call):
+    join_discussion(call.message.chat.id)
+
+
+# /join_discussion
+@bot.message_handler(commands=['join_discussion'])
+def main(message):
+    join_discussion(message.chat.id)
+
+
+
+# функция помощи
+def help_btn(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    upload_button = types.InlineKeyboardButton("Загрузить материал", callback_data="upload_material")
+    search_button = types.InlineKeyboardButton('Найти материал', callback_data='search_btn')
+    markup.row(upload_button, search_button)
+    help_text = (
+    "💡 <b>Справка по командам бота:</b>\n\n"
+    "📤 <b>Загрузка материалов:</b>\n"
+    "Отправь файл (PDF, DOCX, PPT или изображение) в чат, и бот попросит добавить описание, категорию и теги.\n\n"
+    "🔍 <b>Поиск материалов:</b>\n"
+    "Используй команду /search, чтобы найти материалы по ключевым словам, категориям или тегам.\n"
+    "Пример: `/search математика алгебра`\n\n"
+    "💬 <b>Общение:</b>\n"
+    "Для обсуждения материалов или вопросов присоединяйся к группе или каналу с помощью команды /join_discussion.\n\n"
+    )
+    bot.send_message(chat_id, help_text, parse_mode='html', reply_markup=markup)
+
+
+# Обработчик нажатия кнопки "Помощь"
+@bot.callback_query_handler(func=lambda call: call.data == "help_btn")
+def handle_upload_button(call):
+    help_btn(call.message.chat.id)
+
+# /help
+@bot.message_handler(commands=['help'])
+def main(message):
+    help_btn(message.chat.id)
 
 
 # Функция, запускающая процесс загрузки
@@ -200,21 +256,6 @@ def return_to_menu(call):
         reply_markup=markup
     )
 
-
-# /help
-@bot.message_handler(commands=['help'])
-def main(message):
-    help_text = (
-        "💡 <b>Справка по командам бота:</b>\n\n"
-        "📤 <b>Загрузка материалов:</b>\n"
-        "Отправь файл (PDF, DOCX, PPT или изображение) в чат, и бот попросит добавить описание, категорию и теги.\n\n"
-        "🔍 <b>Поиск материалов:</b>\n"
-        "Используй команду /search, чтобы найти материалы по ключевым словам, категориям или тегам.\n"
-        "Пример: `/search математика алгебра`\n\n"
-        "💬 <b>Общение:</b>\n"
-        "Для обсуждения материалов или вопросов присоединяйся к группе или каналу с помощью команды /join_discussion.\n\n"
-    )
-    bot.send_message(message.chat.id, help_text, parse_mode='html')
 
 
 # Программа работает бесконечно
