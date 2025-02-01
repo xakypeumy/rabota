@@ -18,24 +18,25 @@
 - Удобный и быстрый доступ к учебным ресурсам.
 - Создание сообщества, где студенты могут поддерживать друг друга.
 - Обогащение учебного процесса благодаря обмену знаниями и опытом.
-
+  
+  Телеграм бот: @oaip22_bot
 ### Структура приложения
 
-myproject/
-    main.py
-    setup.py
-    bin/
-        pip-req.txt
-    uploads/
-        search.txt
+myproject/  
+&emsp;main.py  
+&emsp;setup.py  
+&emsp;bin/  
+&emsp;&emsp;pip-req.txt  
+&emsp;uploads/  
+&emsp;&emsp;search.txt  
+  
+### Для быстрой установки всех необходимых библиотек запустите файл <ins>setup.py</ins>.  
+  
+Установить библиотеки вручную можно по спику ниже.  
+  
+Используемые библиотеки:  
 
-### Для быстрой установки всех необходимых библиотек запустите файл <ins>setup.py</ins>. 
-
-Установить библиотеки вручную можно по спику ниже.
-
-Используемые библиотеки:
-
-[pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/)
-
+[pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/)  
+  
 [Django](https://docs.djangoproject.com/en/5.1/topics/install/#installing-distribution-package)
 
