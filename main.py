@@ -12,8 +12,15 @@ SETTINGS_FILE = os.path.join(UPLOAD_FOLDER, "search.txt")
 # Словарь для хранения данных о загружаемом материале
 upload_data = {}
 
+# Временное хранилище данных поиска
+search_data = {}
+
+# Доступные дисциплины и типы файлов
+DISCIPLINES = ["Математика", "История", "Осн. алг. и прог.", "МДК 02.02", "МДК 05.01", "Английский язык"]
+DOC_TYPES = ["Конспект", "Презентация", "Скан", "Изображение"]
+
 # Токен бота
-bot = TeleBot('')
+bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
 
 
 # /start
@@ -49,6 +56,121 @@ def main(message):
 def start_upload(message):
     initiate_upload(message.chat.id)
 
+# Начало поиска: выбор дисциплины
+def start_search(chat_id):
+    search_data[chat_id] = {}  # Очищаем предыдущие данные
+
+    markup = types.InlineKeyboardMarkup()
+    for discipline in DISCIPLINES:
+        markup.add(types.InlineKeyboardButton(text=discipline, callback_data=f"search_discipline_{discipline}"))
+    
+    bot.send_message(chat_id, "📚 Выберите дисциплину:", reply_markup=markup)
+
+
+# Обработчик выбора дисциплины
+@bot.callback_query_handler(func=lambda call: call.data.startswith("search_discipline_"))
+def save_discipline(call):
+    chat_id = call.message.chat.id
+    discipline = call.data.split("_")[2]
+    search_data[chat_id]["discipline"] = discipline
+
+    markup = types.InlineKeyboardMarkup()
+    for doc_type in DOC_TYPES:
+        markup.add(types.InlineKeyboardButton(text=doc_type, callback_data=f"search_doc_type_{doc_type}"))
+    
+    markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_discipline"))
+    
+    bot.send_message(chat_id, f"📚 Дисциплина: {discipline}\n📄 Теперь выберите тип документа:", reply_markup=markup)
+
+
+# Обработчик выбора типа документа
+@bot.callback_query_handler(func=lambda call: call.data.startswith("search_doc_type_"))
+def save_doc_type(call):
+    chat_id = call.message.chat.id
+    doc_type = call.data.split("_")[2]
+    search_data[chat_id]["doc_type"] = doc_type
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_doc_type"))
+
+    bot.send_message(chat_id, "🔍 Введите ключевые слова для поиска (например, 'алгебра уравнения').", reply_markup=markup)
+    bot.register_next_step_handler(call.message, search_files)
+
+
+# Обработчик кнопки "Назад" (к выбору дисциплины)
+@bot.callback_query_handler(func=lambda call: call.data == "back_to_discipline")
+def back_to_discipline(call):
+    start_search(call.message.chat.id)
+
+
+# Обработчик кнопки "Назад" (к выбору типа документа)
+@bot.callback_query_handler(func=lambda call: call.data == "back_to_doc_type")
+def back_to_doc_type(call):
+    chat_id = call.message.chat.id
+    discipline = search_data[chat_id].get("discipline", "Неизвестно")
+
+    markup = types.InlineKeyboardMarkup()
+    for doc_type in DOC_TYPES:
+        markup.add(types.InlineKeyboardButton(text=doc_type, callback_data=f"search_doc_type_{doc_type}"))
+    
+    markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_discipline"))
+
+    bot.send_message(chat_id, f"📚 Вы выбрали дисциплину: {discipline}\n📄 Теперь выберите тип документа:", reply_markup=markup)
+
+
+# Функция поиска файлов
+def search_files(message):
+    chat_id = message.chat.id
+    query = message.text.lower()
+    discipline = search_data[chat_id]["discipline"]
+    doc_type = search_data[chat_id]["doc_type"]
+
+    results = []
+
+    # Читаем файл с материалами и ищем совпадения
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                _, file_path, file_discipline, file_doc_type = line.strip().split(",")
+
+                # Проверяем совпадения по дисциплине, типу документа и ключевым словам
+                file_name = os.path.basename(file_path).lower()
+                if (any(word in file_name for word in query.split()) or query in file_discipline.lower()) and \
+                   file_discipline == discipline and file_doc_type == doc_type:
+                    results.append(file_path)
+
+    # Разметка с кнопками "Попробовать снова" и "Назад"
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🔄 Попробовать снова", callback_data="try_search_again"))
+    markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_doc_type"))
+
+    # Если есть результаты, отправляем файлы
+    if results:
+        bot.send_message(chat_id, f"📂 Найдено {len(results)} материалов. Отправляю файлы...")
+
+        for file_path in results:
+            with open(file_path, "rb") as file:
+                bot.send_document(chat_id, file, caption=f"📄 {os.path.basename(file_path)}")
+    else:
+        bot.send_message(chat_id, "❌ Ничего не найдено. Попробуйте изменить параметры поиска.", reply_markup=markup)
+
+
+# Обработчик команды /search
+@bot.message_handler(commands=['search'])
+def search_command(message):
+    start_search(message.chat.id)
+
+
+# Обработчик нажатия кнопки "Найти материал"
+@bot.callback_query_handler(func=lambda call: call.data == "search_btn")
+def handle_search_button(call):
+    start_search(call.message.chat.id)
+
+
+# Обработчик кнопки "🔄 Попробовать снова"
+@bot.callback_query_handler(func=lambda call: call.data == "try_search_again")
+def retry_search(call):
+    start_search(call.message.chat.id)
 
 # функция обсуждения
 def join_discussion(chat_id):
@@ -74,19 +196,22 @@ def main(message):
 
 
 
+
 # функция помощи
 def help_btn(chat_id):
     markup = types.InlineKeyboardMarkup()
     upload_button = types.InlineKeyboardButton("Загрузить материал", callback_data="upload_material")
     search_button = types.InlineKeyboardButton('Найти материал', callback_data='search_btn')
     markup.row(upload_button, search_button)
+    discussion = types.InlineKeyboardButton("Присоединиться к обсуждению", callback_data="join_discussion")
+    markup.row(discussion)
     help_text = (
     "💡 <b>Справка по командам бота:</b>\n\n"
     "📤 <b>Загрузка материалов:</b>\n"
     "Отправь файл (PDF, DOCX, PPT или изображение) в чат, и бот попросит добавить описание, категорию и теги.\n\n"
     "🔍 <b>Поиск материалов:</b>\n"
     "Используй команду /search, чтобы найти материалы по ключевым словам, категориям или тегам.\n"
-    "Пример: `/search математика алгебра`\n\n"
+    "Пример: '/search математика алгебра'\n\n"
     "💬 <b>Общение:</b>\n"
     "Для обсуждения материалов или вопросов присоединяйся к группе или каналу с помощью команды /join_discussion.\n\n"
     )
@@ -135,7 +260,7 @@ def handle_file_upload(message):
         file_extension = ".jpg"
 
     # Проверяем формат файла
-    allowed_extensions = ['.pdf', '.docx', '.ppt', '.txt', '.jpg', '.png']
+    allowed_extensions = ['.pdf', '.docx', '.pptx', '.txt', '.jpg', '.png']
     if file_extension not in allowed_extensions:
         bot.send_message(
             message.chat.id, 
@@ -242,6 +367,7 @@ def save_file_with_name(message):
     upload_data.pop(message.chat.id, None)
 
 
+
 # Обработчик кнопки "Вернуться к выбору действия"
 @bot.callback_query_handler(func=lambda call: call.data == "return_to_menu")
 def return_to_menu(call):
@@ -249,13 +375,15 @@ def return_to_menu(call):
     upload_button = types.InlineKeyboardButton("Загрузить файл", callback_data="upload_material")
     search_button = types.InlineKeyboardButton("Найти файл", callback_data="search_btn")
     markup.row(upload_button, search_button)
+    discussion = types.InlineKeyboardButton("Присоединиться к обсуждению", callback_data="join_discussion")
+    markup.row(discussion)
+    
 
     bot.send_message(
         call.message.chat.id,
         "Что Вы хотите сделать?",
         reply_markup=markup
     )
-
 
 
 # Программа работает бесконечно
