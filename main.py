@@ -22,6 +22,8 @@ DOC_TYPES = ["Конспект", "Презентация", "Скан", "Изоб
 # Токен бота
 bot = TeleBot('')
 
+# Количество файлов на одной странице
+FILES_PER_PAGE = 5
 
 # /start
 @bot.message_handler(commands=['start'])
@@ -139,20 +141,73 @@ def search_files(message):
                    file_discipline == discipline and file_doc_type == doc_type:
                     results.append(file_path)
 
-    # Разметка с кнопками "Попробовать снова" и "Назад"
+    # Сохраняем найденные файлы и начинаем с 1-й страницы
+    search_data[chat_id]["results"] = results
+    search_data[chat_id]["page"] = 0
+
+    send_search_results(chat_id)
+
+
+# Отправка списка файлов с кнопками
+def send_search_results(chat_id):
+    results = search_data[chat_id]["results"]
+    page = search_data[chat_id]["page"]
+    
+    if not results:
+        bot.send_message(chat_id, "❌ Ничего не найдено. Попробуйте изменить параметры поиска.")
+        return
+
+    start_idx = page * FILES_PER_PAGE
+    end_idx = start_idx + FILES_PER_PAGE
+    files_on_page = results[start_idx:end_idx]
+
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🔄 Попробовать снова", callback_data="try_search_again"))
-    markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_doc_type"))
 
-    # Если есть результаты, отправляем файлы
-    if results:
-        bot.send_message(chat_id, f"📂 Найдено {len(results)} материалов. Отправляю файлы...")
+    # Добавляем кнопки для файлов
+    for file_path in files_on_page:
+        file_name = os.path.basename(file_path)
+        markup.add(types.InlineKeyboardButton(file_name, callback_data=f"open_file_{file_path}"))
 
-        for file_path in results:
-            with open(file_path, "rb") as file:
-                bot.send_document(chat_id, file, caption=f"📄 {os.path.basename(file_path)}")
-    else:
-        bot.send_message(chat_id, "❌ Ничего не найдено. Попробуйте изменить параметры поиска.", reply_markup=markup)
+    # Кнопки "Вперёд" и "Назад"
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(types.InlineKeyboardButton("⬅ Назад", callback_data="prev_page"))
+    if end_idx < len(results):
+        nav_buttons.append(types.InlineKeyboardButton("Вперёд ➡", callback_data="next_page"))
+
+    if nav_buttons:
+        markup.row(*nav_buttons)
+
+    bot.send_message(chat_id, "📂 Результат поиска:", reply_markup=markup)
+
+
+# Обработчик кнопок файлов
+@bot.callback_query_handler(func=lambda call: call.data.startswith("open_file_"))
+def send_file(call):
+    file_path = call.data.split("_", 2)[2]
+    chat_id = call.message.chat.id
+
+    try:
+        with open(file_path, "rb") as file:
+            bot.send_document(chat_id, file, caption=f"📄 {os.path.basename(file_path)}")
+    except Exception as e:
+        bot.send_message(chat_id, f"❌ Ошибка при отправке файла: {str(e)}")
+
+
+# Обработчик кнопки "Вперёд ➡"
+@bot.callback_query_handler(func=lambda call: call.data == "next_page")
+def next_page(call):
+    chat_id = call.message.chat.id
+    search_data[chat_id]["page"] += 1
+    send_search_results(chat_id)
+
+
+# Обработчик кнопки "⬅ Назад"
+@bot.callback_query_handler(func=lambda call: call.data == "prev_page")
+def prev_page(call):
+    chat_id = call.message.chat.id
+    search_data[chat_id]["page"] -= 1
+    send_search_results(chat_id)
 
 
 # Обработчик команды /search
@@ -208,7 +263,7 @@ def help_btn(chat_id):
     help_text = (
     "💡 <b>Справка по командам бота:</b>\n\n"
     "📤 <b>Загрузка материалов:</b>\n"
-    "Отправь файл (PDF, DOCX, PPT или изображение) в чат, и бот попросит добавить описание, категорию и теги.\n\n"
+    "Отправь файл (PDF, DOCX, PPTX или изображение) в чат, и бот попросит добавить описание, категорию и теги.\n\n"
     "🔍 <b>Поиск материалов:</b>\n"
     "Используй команду /search, чтобы найти материалы по ключевым словам, категориям или тегам.\n"
     "Пример: '/search математика алгебра'\n\n"
@@ -233,7 +288,7 @@ def main(message):
 def initiate_upload(chat_id):
     bot.send_message(
         chat_id,
-        "Отправьте файл, который хотите загрузить. Поддерживаемые форматы: PDF, DOCX, PPT, TXT, WORD, изображение."
+        "Отправьте файл, который хотите загрузить. Поддерживаемые форматы: PDF, DOCX, PPTX, TXT, WORD, изображение."
     )
     upload_data[chat_id] = {}  # Инициализируем место для хранения данных
 
