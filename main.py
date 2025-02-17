@@ -20,7 +20,7 @@ DISCIPLINES = ["Математика", "История", "Осн. алг. и п�
 DOC_TYPES = ["Конспект", "Презентация", "Скан", "Изображение"]
 
 # Токен бота
-bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
+bot = TeleBot('')
 
 # Количество файлов на одной странице
 FILES_PER_PAGE = 5
@@ -318,6 +318,11 @@ def initiate_upload(chat_id):
 def handle_upload_button(call):
     initiate_upload(call.message.chat.id)
 
+# Обработчик загрузки изображений (если отправлено как фото)
+@bot.message_handler(content_types=['photo'])
+def handle_photo_as_image(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "❌ Пожалуйста, отправьте изображение в виде документа (файла), а не как фото.")
 
 # Обработчик загрузки файла
 @bot.message_handler(content_types=['document', 'photo'])
