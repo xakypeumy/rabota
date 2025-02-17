@@ -20,7 +20,7 @@ DISCIPLINES = ["Математика", "История", "Осн. алг. и п�
 DOC_TYPES = ["Конспект", "Презентация", "Скан", "Изображение"]
 
 # Токен бота
-bot = TeleBot('')
+bot = TeleBot('7483199961:AAEbY7Vutbov7ticRMKam3vdeUd53TsnaVE')
 
 # Количество файлов на одной странице
 FILES_PER_PAGE = 5
@@ -93,11 +93,31 @@ def save_doc_type(call):
     search_data[chat_id]["doc_type"] = doc_type
 
     markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Пропустить этап", callback_data="skip_keywords"))
     markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_doc_type"))
 
     bot.send_message(chat_id, "🔍 Введите ключевые слова для поиска (например, 'алгебра уравнения').", reply_markup=markup)
     bot.register_next_step_handler(call.message, search_files)
 
+# Обработчик кнопки "Пропустить этап"
+
+@bot.callback_query_handler(func=lambda call: call.data == "skip_keywords") 
+def skip_keywords(call): 
+    chat_id = call.message.chat.id 
+    discipline = search_data[chat_id]["discipline"] 
+    doc_type = search_data[chat_id]["doc_type"]
+    results = []
+
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                _, file_path, file_discipline, file_doc_type = line.strip().split(",")
+                if file_discipline == discipline and file_doc_type == doc_type:
+                    results.append(file_path)
+
+    search_data[chat_id]["results"] = results
+    search_data[chat_id]["page"] = 0
+    send_search_results(chat_id)
 
 # Обработчик кнопки "Назад" (к выбору дисциплины)
 @bot.callback_query_handler(func=lambda call: call.data == "back_to_discipline")
@@ -123,7 +143,7 @@ def back_to_doc_type(call):
 # Функция поиска файлов
 def search_files(message):
     chat_id = message.chat.id
-    query = message.text.lower()
+    query = message.text
     discipline = search_data[chat_id]["discipline"]
     doc_type = search_data[chat_id]["doc_type"]
 
